@@ -25,7 +25,7 @@ public class Commande implements Serializable {
 
 	@Override
 	public String toString() {
-		return "Commande proprietes=" + Arrays.toString(proprietes) ;
+		return "Commande =" + Arrays.toString(proprietes) ;
 	}
 	
 }

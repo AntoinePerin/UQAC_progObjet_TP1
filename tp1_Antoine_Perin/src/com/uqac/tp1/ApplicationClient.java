@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -68,32 +69,38 @@ public class ApplicationClient {
 	 */
 
 	public Object traiteCommande(Commande uneCommande) {
-
+		
+		Object resultatTraitement = new Object();
+		
 		try {
 			// Creation d'un nouveau socket
 			Socket s = new Socket(this.hostname, this.port);
-			// Envoyer objet au serveur
+			
+			// creations des streams
 			ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+			ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
 
 			// Ecrire objet
 			oos.writeObject(uneCommande);
+			
+			//Recuperer résultat traitement
+			resultatTraitement = ois.readObject();
 
 			// fermer Stream
 			oos.flush();
 			oos.close();
-
-			// Résultat de l'execution est retourné
-
-			// ObjectInputStream ois = new ObjectInputStream(this.s.getInputStream());
+			ois.close();
 
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 		// Le résultat de l’exécution est retournée.
-
-		return uneCommande;
+		return resultatTraitement;
 
 	}
 
@@ -107,14 +114,10 @@ public class ApplicationClient {
 	public void scenario(String fichCommandes, String fichSortie) {
 
 		try {
-
 			// Lecture fichiher local commande
 			File file = new File(fichCommandes);
 			FileReader fr = new FileReader(file.getAbsoluteFile());
 			BufferedReader commandesReader = new BufferedReader(fr);
-
-			// Commande prochaine = saisisCommande(commandesReader);
-			// Object resultat = traiteCommande(prochaine);
 
 			// Ecriture fichier local sortie
 			PrintWriter sortieWriter = new PrintWriter(fichSortie);
@@ -124,7 +127,6 @@ public class ApplicationClient {
 			Commande prochaine = saisisCommande(commandesReader);
 
 			while (prochaine != null) {
-				System.out.println(prochaine);
 				sortieWriter.println("\tTraitement de la commande " + prochaine + " ...");
 				Object resultat = traiteCommande(prochaine);
 				sortieWriter.println("\t\tResultat: " + resultat);

@@ -1,7 +1,10 @@
 package com.uqac.tp1;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -18,25 +21,14 @@ import java.lang.Class;
 public class ApplicationServeur {
 
 	private ServerSocket ss;
-
-	private String fichSource;
-	private String fichClass;
-	private String fichTrace;
-
 	private Map<String, Object> listeObjet;
 
 	/**
 	 * prend le numéro de port, crée un SocketServer sur le port
 	 */
-	public ApplicationServeur(int port, String fichSource, String fichClass, String fichTrace) {
+	public ApplicationServeur(int port) {
 		try {
 			this.ss = new ServerSocket(port);
-			System.out.println("Server en écoute sur le port " + port);
-
-			this.fichSource = fichSource;
-			this.fichClass = fichClass;
-			this.fichTrace = fichTrace;
-
 			this.listeObjet = new HashMap<String, Object>();
 
 		} catch (IOException e) {
@@ -49,60 +41,77 @@ public class ApplicationServeur {
 	 * ce qui est envoyé à travers la Socket, recrée l’objet Commande envoyé par le
 	 * client, et appellera traiterCommande(Commande uneCommande)
 	 */
-	public void aVosOrdres() {
+	public void aVosOrdres(String fichTrace) {
+
+		// Fichier trace serveur
+		PrintWriter traceWriter = null;
+		try {
+			PrintWriter writer = new PrintWriter(fichTrace);
+			traceWriter = new PrintWriter(writer, true);
+			traceWriter.println("Server en écoute sur le port " + this.ss.getLocalPort() + "\n");
+
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 
 		while (true) {
 			try {
 				// Se met en attente de connexions clients
-				System.out.println("Waiting for connections.");
+				traceWriter.println("\nEn Attente de connexions");
 				Socket client = ss.accept();
-				System.out.println("Client connecté");
+				traceWriter.println("Client " + client.getRemoteSocketAddress().toString() + " connecté");
 
-				// Recevoir objet client
+				// creation des streams
 				ObjectInputStream ois = new ObjectInputStream(client.getInputStream());
+				ObjectOutputStream oos = new ObjectOutputStream(client.getOutputStream());
 
 				// Lire objet et recreer Commande
 				Commande cmd = (Commande) ois.readObject();
-				System.out.println(cmd);
 
+				// Appel de traiter commande et envoie du résultat au client
+				oos.writeObject(traiterCommande(cmd, traceWriter));
+				
 				// Fermer stream
+				oos.flush();
+				oos.close();
 				ois.close();
-
-				// Appel de traiter commande
-				traiterCommande(cmd);
-
+				
+				
 			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 	}
 
 	/**
-	 * prend uneCommande dument formattée, et la traite. Dépendant du type de
-	 * commande, elle appelle la méthode spécialisée
+	 * traiterCommande : prend uneCommande dument formattée, et la traite. Dépendant du type de
+	 * commande, elle appelle la méthode spécialisée. Renvoie le resultat de la commande
 	 */
-	public void traiterCommande(Commande uneCommande) {
+	public Object traiterCommande(Commande uneCommande, PrintWriter traceWriter) {
 
+		// Ecriture commande à traiter fichier trace serveur
+		traceWriter.println("Traitement de la commande : " + uneCommande);
+
+		/// On récupère les propriétés de la commande dans un tableau
 		String[] proprietesCommande = uneCommande.getProprietes();
 
-		// On réalise un swicth sur la propriété 0 qui correspond au mot clé de la
-		// commande
+		// On réalise un switch sur la propriété 0 correspondant a l'id de la cmd
 		switch (proprietesCommande[0]) {
+
 		case "compilation":
-			System.out.println("Compilation");
 			String[] cheminsFichierACompiler = proprietesCommande[1].split(",");
-			for (int i = 0; i <= cheminsFichierACompiler.length; i++) {
+			for (int i = 0; i < cheminsFichierACompiler.length; i++) {
 				traiterCompilation(cheminsFichierACompiler[i], proprietesCommande[2]);
 			}
 			break;
 
 		case "chargement":
-			System.out.println("Chargement");
 			String nomQualifie = proprietesCommande[1];
 			traiterChargement(nomQualifie);
 			break;
 
 		case "creation":
-			System.out.println("Creation");
 			try {
 				Class classeDeLObjet = Class.forName(proprietesCommande[1]);
 				String identificateur = proprietesCommande[2];
@@ -111,14 +120,9 @@ public class ApplicationServeur {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
-			for (Map.Entry me : listeObjet.entrySet()) {
-				System.out.println(me.getKey() + " " + me.getValue());
-			}
 			break;
 
 		case "lecture":
-			System.out.println("Lecture");
 			String identificateur = proprietesCommande[1];
 			Object pointeurObjet = listeObjet.get(identificateur);
 			String attribut = proprietesCommande[2];
@@ -126,45 +130,39 @@ public class ApplicationServeur {
 			break;
 
 		case "ecriture":
-			System.out.println("Ecriture");
 			String identificateur2 = proprietesCommande[1];
 			Object pointeurObjet2 = listeObjet.get(identificateur2);
 			String attribut2 = proprietesCommande[2];
 			Object valeur = proprietesCommande[3];
 			traiterEcriture(pointeurObjet2, attribut2, valeur);
-
-			// Elements can traverse in any order
-			for (Map.Entry me : listeObjet.entrySet()) {
-				System.out.println(me.getKey() + " " + me.getValue());
-			}
 			break;
 
 		case "fonction":
-			System.out.println("Fonction");
 			String identificateur3 = proprietesCommande[1];
 			Object pointeurObjet3 = listeObjet.get(identificateur3);
 			String nomFonction = proprietesCommande[2];
 
-			String[] listAttribut = proprietesCommande[3].split(",");
-			String[] types = new String[listAttribut.length];
-			Object[] valeurs = new String[listAttribut.length];
+			String[] types = null;
+			Object[] valeurs = null;
 
-			for (int j = 0; j < listAttribut.length; j++) {
-				String[] tabIntermediaire = listAttribut[j].split(":");
-				types[j] = tabIntermediaire[0];
-				valeurs[j] = tabIntermediaire[1];
+			// Si la fonction a des attributs on les isoles dans des tableaux séparement
+			// leurs valeurs et leurs types
+			if (proprietesCommande.length > 3) {
+				String[] listAttribut = proprietesCommande[3].split(",");
+				types = new String[listAttribut.length];
+				valeurs = new String[listAttribut.length];
+
+				for (int j = 0; j < listAttribut.length; j++) {
+					String[] tabIntermediaire = listAttribut[j].split(":");
+					types[j] = tabIntermediaire[0];
+					valeurs[j] = tabIntermediaire[1];
+				}
 			}
+
 			traiterAppel(pointeurObjet3, nomFonction, types, valeurs);
-			
-			for (Map.Entry me : listeObjet.entrySet()) {
-				System.out.println(me.getKey() + " " + me.getValue());
-			}
 			break;
-
-		default:
-			break;
-
 		}
+		return "test";
 
 	}
 
@@ -174,13 +172,17 @@ public class ApplicationServeur {
 	 */
 	public void traiterLecture(Object pointeurObjet, String attribut) {
 		try {
+			//traite la lecture d’un attribut
 			Class classeDeLobjet = pointeurObjet.getClass();
 			Method[] methods = classeDeLobjet.getMethods();
 			Method mGetAttribut;
 			mGetAttribut = classeDeLobjet.getMethod("get" + capitalize(attribut), null);
-			System.out.println(mGetAttribut.invoke(pointeurObjet));
+		
 
-			// TODO Renvoyer le résultat de la lecture par le Socket
+			//Renvoyer le résultat de la lecture par le Socket
+			System.out.println(mGetAttribut.invoke(pointeurObjet));
+			
+			
 
 		} catch (NoSuchMethodException e) {
 			e.printStackTrace();
@@ -290,6 +292,8 @@ public class ApplicationServeur {
 
 		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 		compiler.run(null, null, null, cheminRelatifFichierSource);
+
+		// Pour spécifier un chemin de destination des fichiers class
 		// compiler.run(null, null, null, "-d",cheminRelatifFichierClass,
 		// cheminRelatifFichierSource);
 
@@ -307,30 +311,36 @@ public class ApplicationServeur {
 	public void traiterAppel(Object pointeurObjet, String nomFonction, Object[] types, Object[] valeurs) {
 
 		Class classeDeLobjet = pointeurObjet.getClass();
-		Class[] parameterType = new Class[types.length];
 
-		// boucle pour parameter type
-		for (int i = 0; i < types.length; i++) {
-			if (types[i].equals("float")) {
-				parameterType[i] = float.class;
-			} else if (types[i].equals("ca.uqac.registraire.Etudiant")) {
-				parameterType[i] = ca.uqac.registraire.Etudiant.class;
-			} else if (types[i].equals("ca.uqac.registraire.Cours")) {
-				parameterType[i] = ca.uqac.registraire.Cours.class;
+		Class[] parameterType = null;
+		if (types != null) {
+			parameterType = new Class[types.length];
+
+			// boucle pour parameter type
+			for (int i = 0; i < types.length; i++) {
+				if (types[i].equals("float")) {
+					parameterType[i] = float.class;
+				} else if (types[i].equals("ca.uqac.registraire.Etudiant")) {
+					parameterType[i] = ca.uqac.registraire.Etudiant.class;
+				} else if (types[i].equals("ca.uqac.registraire.Cours")) {
+					parameterType[i] = ca.uqac.registraire.Cours.class;
+				}
 			}
 		}
 
 		// boucle pour valeurs
-		Object[] valeurs2 = new Object[valeurs.length];
+		Object[] valeurs2 = null;
+		if (valeurs != null) {
+			valeurs2 = new Object[valeurs.length];
 
-		for (int j = 0; j < valeurs.length; j++) {
-			if (((String) valeurs[j]).substring(0, 2).equals("ID")) {
-				String identifiant = ((String) valeurs[j]).substring(3, ((String) valeurs[j]).length() - 1);
-				System.out.println(listeObjet.get(identifiant));
-				valeurs2[j] = listeObjet.get(identifiant);
-			} else {
-				float f = Float.parseFloat((String) valeurs[j]) ;
-				valeurs2[j] = f;
+			for (int j = 0; j < valeurs.length; j++) {
+				if (((String) valeurs[j]).substring(0, 2).equals("ID")) {
+					String identifiant = ((String) valeurs[j]).substring(3, ((String) valeurs[j]).length() - 1);
+					valeurs2[j] = listeObjet.get(identifiant);
+				} else {
+					float f = Float.parseFloat((String) valeurs[j]);
+					valeurs2[j] = f;
+				}
 			}
 		}
 
@@ -358,8 +368,8 @@ public class ApplicationServeur {
 	 */
 	public static void main(String[] args) {
 
-		ApplicationServeur serveur = new ApplicationServeur(Integer.valueOf(args[0]), args[1], args[2], args[3]);
-		serveur.aVosOrdres();
+		ApplicationServeur serveur = new ApplicationServeur(Integer.valueOf(args[0]));
+		serveur.aVosOrdres(args[3]);
 
 	}
 

@@ -1,0 +1,104 @@
+Server en écoute sur le port 6500
+
+
+En Attente de connexions
+Client /127.0.0.1:58149 connecté
+Traitement de la commande : Commande =[compilation, ./src/ca/uqac/registraire/Cours.java,./src/ca/uqac/registraire/Etudiant.java, ./classes]
+
+En Attente de connexions
+Client /127.0.0.1:58150 connecté
+Traitement de la commande : Commande =[chargement, ca.uqac.registraire.Cours]
+
+En Attente de connexions
+Client /127.0.0.1:58151 connecté
+Traitement de la commande : Commande =[creation, ca.uqac.registraire.Cours, 8inf853]
+
+En Attente de connexions
+Client /127.0.0.1:58152 connecté
+Traitement de la commande : Commande =[ecriture, 8inf853, titre, Architecture des applications]
+
+En Attente de connexions
+Client /127.0.0.1:58153 connecté
+Traitement de la commande : Commande =[lecture, 8inf853, titre]
+
+En Attente de connexions
+Client /127.0.0.1:58154 connecté
+Traitement de la commande : Commande =[creation, ca.uqac.registraire.Cours, 8inf843]
+
+En Attente de connexions
+Client /127.0.0.1:58155 connecté
+Traitement de la commande : Commande =[ecriture, 8inf843, titre, Systemes repartis]
+
+En Attente de connexions
+Client /127.0.0.1:58156 connecté
+Traitement de la commande : Commande =[chargement, ca.uqac.registraire.Etudiant]
+
+En Attente de connexions
+Client /127.0.0.1:58157 connecté
+Traitement de la commande : Commande =[creation, ca.uqac.registraire.Etudiant, mathilde]
+
+En Attente de connexions
+Client /127.0.0.1:58158 connecté
+Traitement de la commande : Commande =[ecriture, mathilde, nom, Mathilde Boivin]
+
+En Attente de connexions
+Client /127.0.0.1:58159 connecté
+Traitement de la commande : Commande =[creation, ca.uqac.registraire.Etudiant, raymond]
+
+En Attente de connexions
+Client /127.0.0.1:58160 connecté
+Traitement de la commande : Commande =[ecriture, raymond, nom, Raymond Sauve]
+
+En Attente de connexions
+Client /127.0.0.1:58161 connecté
+Traitement de la commande : Commande =[fonction, 8inf853, getNote, ca.uqac.registraire.Etudiant:ID(mathilde)]
+
+En Attente de connexions
+Client /127.0.0.1:58162 connecté
+Traitement de la commande : Commande =[fonction, mathilde, inscrisDansCours, ca.uqac.registraire.Cours:ID(8inf853)]
+
+En Attente de connexions
+Client /127.0.0.1:58163 connecté
+Traitement de la commande : Commande =[fonction, 8inf853, attributeNote, ca.uqac.registraire.Etudiant:ID(mathilde),float:3.7]
+
+En Attente de connexions
+Client /127.0.0.1:58164 connecté
+Traitement de la commande : Commande =[fonction, 8inf853, getNote, ca.uqac.registraire.Etudiant:ID(mathilde)]
+
+En Attente de connexions
+Client /127.0.0.1:58165 connecté
+Traitement de la commande : Commande =[fonction, mathilde, inscrisDansCours, ca.uqac.registraire.Cours:ID(8inf843)]
+
+En Attente de connexions
+Client /127.0.0.1:58166 connecté
+Traitement de la commande : Commande =[fonction, 8inf843, attributeNote, ca.uqac.registraire.Etudiant:ID(mathilde),float:4.0]
+
+En Attente de connexions
+Client /127.0.0.1:58167 connecté
+Traitement de la commande : Commande =[fonction, mathilde, getMoyenne]
+
+En Attente de connexions
+Client /127.0.0.1:58168 connecté
+Traitement de la commande : Commande =[fonction, raymond, inscrisDansCours, ca.uqac.registraire.Cours:ID(8inf853)]
+
+En Attente de connexions
+Client /127.0.0.1:58169 connecté
+Traitement de la commande : Commande =[fonction, raymond, inscrisDansCours, ca.uqac.registraire.Cours:ID(8inf843)]
+
+En Attente de connexions
+Client /127.0.0.1:58170 connecté
+Traitement de la commande : Commande =[fonction, 8inf853, attributeNote, ca.uqac.registraire.Etudiant:ID(raymond),float:3.0]
+
+En Attente de connexions
+Client /127.0.0.1:58171 connecté
+Traitement de la commande : Commande =[fonction, 8inf843, attributeNote, ca.uqac.registraire.Etudiant:ID(raymond),float:2.7]
+
+En Attente de connexions
+Client /127.0.0.1:58172 connecté
+Traitement de la commande : Commande =[fonction, mathilde, getMoyenne]
+
+En Attente de connexions
+Client /127.0.0.1:58173 connecté
+Traitement de la commande : Commande =[fonction, 8inf853, toString]
+
+En Attente de connexions
