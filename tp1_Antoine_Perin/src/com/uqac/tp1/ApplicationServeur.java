@@ -9,7 +9,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.lang.ClassLoader;
@@ -54,7 +53,9 @@ public class ApplicationServeur {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-
+		
+		//Boucle serveur
+		
 		while (true) {
 			try {
 				// Se met en attente de connexions clients
@@ -90,6 +91,9 @@ public class ApplicationServeur {
 	 */
 	public Object traiterCommande(Commande uneCommande, PrintWriter traceWriter) {
 
+		Object resultatTraitement = new Object();
+		resultatTraitement=null;
+		
 		// Ecriture commande à traiter fichier trace serveur
 		traceWriter.println("Traitement de la commande : " + uneCommande);
 
@@ -104,21 +108,21 @@ public class ApplicationServeur {
 			for (int i = 0; i < cheminsFichierACompiler.length; i++) {
 				traiterCompilation(cheminsFichierACompiler[i], proprietesCommande[2]);
 			}
+			resultatTraitement="La Compilation de(s) ce(s) fichier(s) a bien été réalisé";
 			break;
 
 		case "chargement":
 			String nomQualifie = proprietesCommande[1];
-			traiterChargement(nomQualifie);
+			resultatTraitement = traiterChargement(nomQualifie);
 			break;
 
 		case "creation":
 			try {
 				Class classeDeLObjet = Class.forName(proprietesCommande[1]);
 				String identificateur = proprietesCommande[2];
-				traiterCreation(classeDeLObjet, identificateur);
+				resultatTraitement = traiterCreation(classeDeLObjet, identificateur);
 			} catch (ClassNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				resultatTraitement = e.toString();
 			}
 			break;
 
@@ -126,7 +130,7 @@ public class ApplicationServeur {
 			String identificateur = proprietesCommande[1];
 			Object pointeurObjet = listeObjet.get(identificateur);
 			String attribut = proprietesCommande[2];
-			traiterLecture(pointeurObjet, attribut);
+			resultatTraitement=traiterLecture(pointeurObjet, attribut);
 			break;
 
 		case "ecriture":
@@ -134,7 +138,7 @@ public class ApplicationServeur {
 			Object pointeurObjet2 = listeObjet.get(identificateur2);
 			String attribut2 = proprietesCommande[2];
 			Object valeur = proprietesCommande[3];
-			traiterEcriture(pointeurObjet2, attribut2, valeur);
+			resultatTraitement = traiterEcriture(pointeurObjet2, attribut2, valeur);
 			break;
 
 		case "fonction":
@@ -159,10 +163,15 @@ public class ApplicationServeur {
 				}
 			}
 
-			traiterAppel(pointeurObjet3, nomFonction, types, valeurs);
+			resultatTraitement = traiterAppel(pointeurObjet3, nomFonction, types, valeurs);
 			break;
 		}
-		return "test";
+		
+		//On ecrit le resultat du traitement dans le fichier trace du serveur
+		traceWriter.println("Resultat du traitement  : " + resultatTraitement);
+		
+		//On retourne le resultat du traitement
+		return resultatTraitement;
 
 	}
 
@@ -170,30 +179,25 @@ public class ApplicationServeur {
 	 * traiterLecture : traite la lecture d’un attribut. Renvoies le résultat par le
 	 * socket
 	 */
-	public void traiterLecture(Object pointeurObjet, String attribut) {
+	public Object traiterLecture(Object pointeurObjet, String attribut) {
 		try {
 			//traite la lecture d’un attribut
 			Class classeDeLobjet = pointeurObjet.getClass();
 			Method[] methods = classeDeLobjet.getMethods();
 			Method mGetAttribut;
 			mGetAttribut = classeDeLobjet.getMethod("get" + capitalize(attribut), null);
-		
-
-			//Renvoyer le résultat de la lecture par le Socket
-			System.out.println(mGetAttribut.invoke(pointeurObjet));
-			
-			
+			return mGetAttribut.invoke(pointeurObjet);
 
 		} catch (NoSuchMethodException e) {
-			e.printStackTrace();
+			return e.toString();
 		} catch (SecurityException e) {
-			e.printStackTrace();
+			return e.toString();
 		} catch (IllegalAccessException e) {
-			e.printStackTrace();
+			return e.toString();
 		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
+			return e.toString();
 		} catch (InvocationTargetException e) {
-			e.printStackTrace();
+			return e.toString();
 		}
 
 	}
@@ -202,29 +206,23 @@ public class ApplicationServeur {
 	 * traiterEcriture : traite l’écriture d’un attribut. Confirmes au client que
 	 * l’écriture s’est faite correctement.
 	 */
-	public void traiterEcriture(Object pointeurObjet, String attribut, Object valeur) {
+	public String traiterEcriture(Object pointeurObjet, String attribut, Object valeur) {
 		try {
 			Class classeDeLobjet = pointeurObjet.getClass();
 			Method mSetAttribut = classeDeLobjet.getMethod("set" + capitalize(attribut), String.class);
 			mSetAttribut.invoke(pointeurObjet, valeur);
-
-			// TODO Confirmer au client que l'ecriture de l'argument est faite
+			return "L'écriture de l'attribut a été effectué";
 
 		} catch (SecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return e.toString();
 		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return e.toString();
 		} catch (NoSuchMethodException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return e.toString();
 		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return e.toString();
 		} catch (InvocationTargetException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return e.toString();
 		}
 	}
 
@@ -232,34 +230,27 @@ public class ApplicationServeur {
 	 * traiterCreation : traite la création d’un objet. Confirme au client que la
 	 * création s’est faite correctement.
 	 */
-	public void traiterCreation(Class classeDeLobjet, String identificateur) {
+	public String traiterCreation(Class classeDeLobjet, String identificateur) {
 
-		// traiter la création d'un objet
 		try {
+			// traiter la création d'un objet
 			Constructor ct = classeDeLobjet.getConstructor();
 			Object o = ct.newInstance();
 			listeObjet.put(identificateur, o);
-
-			// TODO Confirmer au client que la création est faite
+			return "La nouvelle instance de la classe a bien été créée";
 
 		} catch (InstantiationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return e.toString();
 		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return e.toString();
 		} catch (NoSuchMethodException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return e.toString();
 		} catch (SecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return e.toString();
 		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return e.toString();
 		} catch (InvocationTargetException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return e.toString();
 		}
 
 	}
@@ -268,18 +259,20 @@ public class ApplicationServeur {
 	 * traiterChargement : traite le chargement d’une classe. Confirmes au client
 	 * que la création s’est faite correctement.
 	 */
-	public void traiterChargement(String nomQualifie) {
+	public String traiterChargement(String nomQualifie) {
 
 		try {
 			Class c = Class.forName(nomQualifie);
 			ClassLoader classLoader = c.getClassLoader();
+			return "Le chargement du fichier a été effectué";
 
 			// TODO Envoyer confirmation client que le chargement des fichiers "" et ""
 			// s'est bien passé
 
 		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
+			return e.toString();
 		}
+		
 
 	}
 
@@ -293,12 +286,9 @@ public class ApplicationServeur {
 		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
 		compiler.run(null, null, null, cheminRelatifFichierSource);
 
-		// Pour spécifier un chemin de destination des fichiers class
+		// Pour spécifier un chemin de destination des fichiers class --> pas eu le temps
 		// compiler.run(null, null, null, "-d",cheminRelatifFichierClass,
 		// cheminRelatifFichierSource);
-
-		// TODO Envoyer confirmation client que la compilation des fichiers "" et ""
-		// s'est bien passé
 	}
 
 	/**
@@ -308,7 +298,7 @@ public class ApplicationServeur {
 	 * fonction. Le résultat de la fonction est renvoyé par le serveur au client (ou
 	 * le message que tout s’est bien passé)
 	 */
-	public void traiterAppel(Object pointeurObjet, String nomFonction, Object[] types, Object[] valeurs) {
+	public Object traiterAppel(Object pointeurObjet, String nomFonction, Object[] types, Object[] valeurs) {
 
 		Class classeDeLobjet = pointeurObjet.getClass();
 
@@ -346,17 +336,18 @@ public class ApplicationServeur {
 
 		try {
 			Method mFonction = classeDeLobjet.getMethod(nomFonction, parameterType);
-			System.out.println(mFonction.invoke(pointeurObjet, valeurs2));
+			return mFonction.invoke(pointeurObjet, valeurs2);
+			
 		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
+			return e.toString();
 		} catch (IllegalAccessException e) {
-			e.printStackTrace();
+			return e.toString();
 		} catch (InvocationTargetException e) {
-			e.printStackTrace();
+			return e.toString();
 		} catch (NoSuchMethodException e) {
-			e.printStackTrace();
+			return e.toString();
 		} catch (SecurityException e) {
-			e.printStackTrace();
+			return e.toString();
 		}
 	}
 
